@@ -35,6 +35,73 @@ class Proof:
                         total_score = sum(item['score'] for item in input_data)
                         continue
 
+                    elif input_filename == 'Saved Places.json':
+                        # --- New logic for Saved Places.json ---
+                        features = input_data.get('features', [])
+                        num_places = len(features)
+                        required_fields = ['geometry', 'properties']
+                        required_props = ['date', 'google_maps_url', 'location']
+                        required_loc = ['address', 'country_code', 'name']
+                        complete_count = 0
+                        coords = []
+                        for feat in features:
+                            # Check completeness
+                            if all(k in feat for k in required_fields):
+                                props = feat['properties']
+                                loc = props.get('location', {})
+                                if all(k in props for k in required_props) and all(k in loc for k in required_loc):
+                                    complete_count += 1
+                            # Collect coordinates
+                            if 'geometry' in feat and 'coordinates' in feat['geometry']:
+                                coords.append(tuple(feat['geometry']['coordinates']))
+                        completeness = complete_count / num_places if num_places > 0 else 0
+                        # Calculate max pairwise distance (Haversine)
+                        import math
+                        def haversine(coord1, coord2):
+                            lon1, lat1 = coord1
+                            lon2, lat2 = coord2
+                            R = 6371  # Earth radius in km
+                            phi1, phi2 = math.radians(lat1), math.radians(lat2)
+                            dphi = math.radians(lat2 - lat1)
+                            dlambda = math.radians(lon2 - lon1)
+                            a = math.sin(dphi/2)**2 + math.cos(phi1)*math.cos(phi2)*math.sin(dlambda/2)**2
+                            return 2*R*math.asin(math.sqrt(a))
+                        max_dist = 0
+                        for i in range(len(coords)):
+                            for j in range(i+1, len(coords)):
+                                dist = haversine(coords[i], coords[j])
+                                if dist > max_dist:
+                                    max_dist = dist
+                        # Normalize metrics (stricter)
+                        min_places = 5  # Minimum places for nonzero score
+                        max_places = 50  # Need 50+ for max score
+                        max_possible_dist = 20000  # half Earth's circumference in km
+                        norm_num_places = 0 if num_places < min_places else min((num_places - min_places) / (max_places - min_places), 1.0)
+                        norm_completeness = completeness
+                        # Make dispersion more important and stricter
+                        min_dispersion_km = 10  # Need at least 10km for nonzero
+                        norm_dispersion = 0 if max_dist < min_dispersion_km else min((max_dist - min_dispersion_km) / (max_possible_dist - min_dispersion_km), 1.0)
+                        # Weighted score: more weight to dispersion
+                        quality = 0.2 * norm_num_places + 0.2 * norm_completeness + 0.6 * norm_dispersion
+                        uniqueness = norm_dispersion
+                        self.proof_response.ownership = 1.0  # Can't verify user from this file
+                        self.proof_response.quality = quality
+                        self.proof_response.uniqueness = uniqueness
+                        self.proof_response.authenticity = 0
+                        self.proof_response.score = quality  # or combine with uniqueness if desired
+                        self.proof_response.valid = num_places >= min_places and completeness > 0.8 and max_dist >= min_dispersion_km
+                        self.proof_response.attributes = {
+                            'num_places': num_places,
+                            'completeness': completeness,
+                            'max_pairwise_distance_km': max_dist,
+                            'quality': quality,
+                            'uniqueness': uniqueness,
+                        }
+                        self.proof_response.metadata = {
+                            'dlp_id': self.config['dlp_id'],
+                        }
+                        return self.proof_response
+
         email_matches = self.config['user_email'] == account_email
         score_threshold = fetch_random_number()
 
