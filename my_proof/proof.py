@@ -29,6 +29,7 @@ class Proof:
 
                     if input_filename == 'account.json':
                         account_email = input_data.get('email', None)
+                        logging.info(f"Account email: {account_email}")
                         continue
 
                     elif input_filename == 'activity.json':
@@ -99,10 +100,10 @@ class Proof:
                         self.proof_response.metadata = {
                             'dlp_id': self.config['dlp_id'],
                         }
-                        return self.proof_response
 
+        logging.info(f"Account email in config: {self.config['user_email']}")
         email_matches = self.config['user_email'] == account_email
-        score_threshold = fetch_random_number()
+        score_threshold = 0.4
 
         # Calculate proof-of-contribution scores: https://docs.vana.org/vana/core-concepts/key-elements/proof-of-contribution/example-implementation
         self.proof_response.ownership = 1.0 if email_matches else 0.0  # Does the data belong to the user? Or is it fraudulent?
@@ -127,13 +128,3 @@ class Proof:
         }
 
         return self.proof_response
-
-
-def fetch_random_number() -> float:
-    """Demonstrate HTTP requests by fetching a random number from random.org."""
-    try:
-        response = requests.get('https://www.random.org/decimal-fractions/?num=1&dec=2&col=1&format=plain&rnd=new')
-        return float(response.text.strip())
-    except requests.RequestException as e:
-        logging.warning(f"Error fetching random number: {e}. Using local random.")
-        return __import__('random').random()
