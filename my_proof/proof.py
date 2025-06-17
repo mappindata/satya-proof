@@ -79,12 +79,11 @@ class Proof:
                         norm_num_places = 0 if num_places < min_places else min((num_places - min_places) / (max_places - min_places), 1.0)
                         norm_completeness = completeness
                         # Make dispersion more important and stricter
-                        min_dispersion_km = 10  # Need at least 10km for nonzero
+                        min_dispersion_km = 5  # Need at least 10km for nonzero
                         norm_dispersion = 0 if max_dist < min_dispersion_km else min((max_dist - min_dispersion_km) / (max_possible_dist - min_dispersion_km), 1.0)
                         # Weighted score: more weight to dispersion
                         quality = 0.2 * norm_num_places + 0.2 * norm_completeness + 0.6 * norm_dispersion
                         uniqueness = norm_dispersion
-                        self.proof_response.ownership = 1.0  # Can't verify user from this file
                         self.proof_response.quality = quality
                         self.proof_response.uniqueness = uniqueness
                         self.proof_response.authenticity = 0
