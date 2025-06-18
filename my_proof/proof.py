@@ -78,20 +78,20 @@ class Proof:
                         min_dispersion_km = 2  # Need at least 2km for nonzero
                         norm_dispersion = 0 if max_dist < min_dispersion_km else min((max_dist - min_dispersion_km) / (max_possible_dist - min_dispersion_km), 1.0)
                         # Weighted score: more weight to dispersion
-                        quality = 0.2 * norm_num_places + 0.2 * norm_completeness + 0.6 * norm_dispersion
-                        uniqueness = norm_dispersion
+                        quality = round(0.6 * norm_completeness + 0.2 * norm_num_places + 0.2 * norm_dispersion, 3)
+                        uniqueness = round(0.5 * norm_num_places + 0.5 * norm_dispersion, 3)
                         self.proof_response.quality = quality
                         self.proof_response.uniqueness = uniqueness
                         self.proof_response.authenticity = 0
                         self.proof_response.score = 0.7 * quality + 0.3 * uniqueness 
                         self.proof_response.valid = num_places >= min_places and completeness > 0.8 and max_dist >= min_dispersion_km
-                        self.proof_response.attributes = {
-                            'num_places': num_places,
+                        if not hasattr(self.proof_response, 'attributes') or self.proof_response.attributes is None:
+                            self.proof_response.attributes = {}
+                        self.proof_response.attributes.update({
                             'completeness': completeness,
-                            'max_pairwise_distance_km': max_dist,
                             'quality': quality,
                             'uniqueness': uniqueness,
-                        }
+                        })
                         self.proof_response.metadata = {
                             'dlp_id': self.config['dlp_id'],
                         }
@@ -105,10 +105,12 @@ class Proof:
         self.proof_response.ownership = 0 #for now we are not checking ownership
 
         # Additional (public) properties to include in the proof about the data
-        self.proof_response.attributes = {
+        if not hasattr(self.proof_response, 'attributes') or self.proof_response.attributes is None:
+            self.proof_response.attributes = {}
+        self.proof_response.attributes.update({
             'score_threshold': score_threshold,
-            'email_verified': email_matches,
-        }
+            'email_verified': self.proof_response.ownership == 1.0,
+        })
 
         # Additional metadata about the proof, written onchain
         self.proof_response.metadata = {
