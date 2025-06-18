@@ -19,7 +19,6 @@ class Proof:
 
         # Iterate through files and calculate data validity
         account_email = None
-        total_score = 0
 
         for input_filename in os.listdir(self.config['input_dir']):
             input_file = os.path.join(self.config['input_dir'], input_filename)
@@ -30,10 +29,6 @@ class Proof:
                     if input_filename == 'account.json':
                         account_email = input_data.get('email', None)
                         logging.info(f"Account email: {account_email}")
-                        continue
-
-                    elif input_filename == 'activity.json':
-                        total_score = sum(item['score'] for item in input_data)
                         continue
 
                     elif input_filename == 'Saved Places.json':
@@ -106,18 +101,18 @@ class Proof:
         score_threshold = 0.4
 
         # Calculate proof-of-contribution scores: https://docs.vana.org/vana/core-concepts/key-elements/proof-of-contribution/example-implementation
-        self.proof_response.ownership = 1.0 if email_matches else 0.0  # Does the data belong to the user? Or is it fraudulent?
-        self.proof_response.quality = max(0, min(total_score / score_threshold, 1.0))  # How high quality is the data?
+        #self.proof_response.ownership = 1.0 if email_matches else 0.0 
+        self.proof_response.ownership = 1.0 #for now we are not checking ownership
+        self.proof_response.quality = max(0, min(self.proof_response.score / score_threshold, 1.0))  # How high quality is the data?
         self.proof_response.authenticity = 0  # How authentic is the data is (ie: not tampered with)? (Not implemented here)
         self.proof_response.uniqueness = 0  # How unique is the data relative to other datasets? (Not implemented here)
 
         # Calculate overall score and validity
-        self.proof_response.score = 0.6 * self.proof_response.quality + 0.4 * self.proof_response.ownership
-        self.proof_response.valid = email_matches and total_score >= score_threshold
+        self.proof_response.score = 0.7 * self.proof_response.quality + 0.3 * self.proof_response.ownership
+        self.proof_response.valid = email_matches and self.proof_response.score >= score_threshold
 
         # Additional (public) properties to include in the proof about the data
         self.proof_response.attributes = {
-            'total_score': total_score,
             'score_threshold': score_threshold,
             'email_verified': email_matches,
         }
