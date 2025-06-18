@@ -83,7 +83,7 @@ class Proof:
                         self.proof_response.quality = quality
                         self.proof_response.uniqueness = uniqueness
                         self.proof_response.authenticity = 0
-                        self.proof_response.score = quality  # or combine with uniqueness if desired
+                        self.proof_response.score = 0.7 * quality + 0.3 * uniqueness 
                         self.proof_response.valid = num_places >= min_places and completeness > 0.8 and max_dist >= min_dispersion_km
                         self.proof_response.attributes = {
                             'num_places': num_places,
@@ -98,18 +98,11 @@ class Proof:
 
         logging.info(f"Account email in config: {self.config['user_email']}")
         email_matches = self.config['user_email'] == account_email
-        score_threshold = 0.4
+        score_threshold = 0.2
 
         # Calculate proof-of-contribution scores: https://docs.vana.org/vana/core-concepts/key-elements/proof-of-contribution/example-implementation
         #self.proof_response.ownership = 1.0 if email_matches else 0.0 
         self.proof_response.ownership = 1.0 #for now we are not checking ownership
-        self.proof_response.quality = max(0, min(self.proof_response.score / score_threshold, 1.0))  # How high quality is the data?
-        self.proof_response.authenticity = 0  # How authentic is the data is (ie: not tampered with)? (Not implemented here)
-        self.proof_response.uniqueness = 0  # How unique is the data relative to other datasets? (Not implemented here)
-
-        # Calculate overall score and validity
-        self.proof_response.score = 0.7 * self.proof_response.quality + 0.3 * self.proof_response.ownership
-        self.proof_response.valid = email_matches and self.proof_response.score >= score_threshold
 
         # Additional (public) properties to include in the proof about the data
         self.proof_response.attributes = {
