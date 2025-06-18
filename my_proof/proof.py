@@ -69,13 +69,13 @@ class Proof:
                                 if dist > max_dist:
                                     max_dist = dist
                         # Normalize metrics (stricter)
-                        min_places = 5  # Minimum places for nonzero score
+                        min_places = 2  # Minimum places for nonzero score
                         max_places = 50  # Need 50+ for max score
                         max_possible_dist = 20000  # half Earth's circumference in km
                         norm_num_places = 0 if num_places < min_places else min((num_places - min_places) / (max_places - min_places), 1.0)
                         norm_completeness = completeness
                         # Make dispersion more important and stricter
-                        min_dispersion_km = 5  # Need at least 10km for nonzero
+                        min_dispersion_km = 2  # Need at least 2km for nonzero
                         norm_dispersion = 0 if max_dist < min_dispersion_km else min((max_dist - min_dispersion_km) / (max_possible_dist - min_dispersion_km), 1.0)
                         # Weighted score: more weight to dispersion
                         quality = 0.2 * norm_num_places + 0.2 * norm_completeness + 0.6 * norm_dispersion
@@ -102,7 +102,7 @@ class Proof:
 
         # Calculate proof-of-contribution scores: https://docs.vana.org/vana/core-concepts/key-elements/proof-of-contribution/example-implementation
         #self.proof_response.ownership = 1.0 if email_matches else 0.0 
-        self.proof_response.ownership = 1.0 #for now we are not checking ownership
+        self.proof_response.ownership = 0 #for now we are not checking ownership
 
         # Additional (public) properties to include in the proof about the data
         self.proof_response.attributes = {
